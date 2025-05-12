@@ -40,9 +40,17 @@ router.post('/', async (req, res) => {
   try {
     const { name, role, office, region, skills, active_status } = req.body;
     
+    // Validate required fields
+    if (!name || !role || !office || !region) {
+      return res.status(400).json({ 
+        error: 'Missing required fields',
+        required: ['name', 'role', 'office', 'region']
+      });
+    }
+    
     const result = await pool.query(
       'INSERT INTO agents (name, role, office, region, skills, active_status) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
-      [name, role, office, region, skills, active_status]
+      [name, role, office, region, skills || [], active_status ?? true]
     );
     
     res.status(201).json(result.rows[0]);

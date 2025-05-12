@@ -82,7 +82,7 @@ describe('Tasks API', () => {
         .post('/api/tasks')
         .send(invalidTask);
       
-      expect(response.status).toBe(500);
+      expect(response.status).toBe(400);
       expect(response.body).toHaveProperty('error');
     });
   });

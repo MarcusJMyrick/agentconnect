@@ -113,8 +113,9 @@ describe('Agents API', () => {
         .post('/api/agents')
         .send(invalidAgent);
       
-      expect(response.status).toBe(500);
+      expect(response.status).toBe(400);
       expect(response.body).toHaveProperty('error');
+      expect(response.body).toHaveProperty('required');
     });
   });
 }); 
