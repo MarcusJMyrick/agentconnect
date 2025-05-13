@@ -10,10 +10,10 @@ const pool = new Pool({
 // Get all agents
 router.get('/', async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM agents ORDER BY name');
+    const result = await pool.query('SELECT * FROM agents');
     res.json(result.rows);
-  } catch (error) {
-    console.error('Error fetching agents:', error);
+  } catch (err) {
+    console.error('🔥 Error fetching agents:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

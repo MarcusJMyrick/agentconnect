@@ -15,21 +15,28 @@ function Dashboard() {
       try {
         // Fetch agents
         const agentsResponse = await fetch('/api/agents');
+        if (!agentsResponse.ok) throw new Error('Failed to fetch agents');
         const agentsData = await agentsResponse.json();
-        setAgents(agentsData);
+        console.log('Agents data:', agentsData);
+        setAgents(Array.isArray(agentsData) ? agentsData : []);
 
         // Fetch tasks
         const tasksResponse = await fetch('/api/tasks');
+        if (!tasksResponse.ok) throw new Error('Failed to fetch tasks');
         const tasksData = await tasksResponse.json();
-        setTasks(tasksData);
+        console.log('Tasks data:', tasksData);
+        setTasks(Array.isArray(tasksData) ? tasksData : []);
 
         // Fetch team members
-        const teamResponse = await fetch('/api/team');
+        const teamResponse = await fetch('/api/team-members');
+        if (!teamResponse.ok) throw new Error('Failed to fetch team members');
         const teamData = await teamResponse.json();
-        setTeamMembers(teamData);
+        console.log('Team data:', teamData);
+        setTeamMembers(Array.isArray(teamData) ? teamData : []);
 
         setLoading(false);
       } catch (err) {
+        console.error('Error fetching data:', err);
         setError('Failed to fetch dashboard data');
         setLoading(false);
       }

@@ -1,14 +1,20 @@
 const express = require('express');
 const router = express.Router();
-const { Pool } = require('pg');
+const pool = require('../db/db');
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+// Get all team members
+router.get('/', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM team_members');
+    return res.json(result.rows);
+  } catch (err) {
+    console.error('🔥 Error fetching team members:', err);
+    return res.status(500).json({ error: err.message });
+  }
 });
 
 // Get team members by agent ID
-router.get('/', async (req, res) => {
+router.get('/by-agent', async (req, res) => {
   try {
     const { agentId } = req.query;
     
@@ -24,7 +30,7 @@ router.get('/', async (req, res) => {
     res.json(result.rows);
   } catch (error) {
     console.error('Error fetching team members:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: error.message });
   }
 });
 
@@ -45,7 +51,7 @@ router.post('/', async (req, res) => {
     res.status(201).json(result.rows[0]);
   } catch (error) {
     console.error('Error creating team member:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: error.message });
   }
 });
 

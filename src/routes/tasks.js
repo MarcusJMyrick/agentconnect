@@ -1,14 +1,21 @@
 const express = require('express');
 const router = express.Router();
-const { Pool } = require('pg');
+const pool = require('../db/db');
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+// Get all tasks
+router.get('/', async (req, res) => {
+  try {
+    // For now, ignore filtering — just fetch all tasks
+    const result = await pool.query('SELECT * FROM tasks');
+    return res.json(result.rows);
+  } catch (err) {
+    console.error('🔥 Error fetching tasks:', err);   // ← log the actual error
+    return res.status(500).json({ error: err.message }); // ← return the real message
+  }
 });
 
 // Get tasks by assigned team member
-router.get('/', async (req, res) => {
+router.get('/assigned', async (req, res) => {
   try {
     const { assignedTo } = req.query;
     
@@ -24,7 +31,7 @@ router.get('/', async (req, res) => {
     res.json(result.rows);
   } catch (error) {
     console.error('Error fetching tasks:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: error.message });
   }
 });
 
@@ -45,7 +52,7 @@ router.post('/', async (req, res) => {
     res.status(201).json(result.rows[0]);
   } catch (error) {
     console.error('Error creating task:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: error.message });
   }
 });
 
@@ -71,7 +78,7 @@ router.patch('/:id', async (req, res) => {
     res.json(result.rows[0]);
   } catch (error) {
     console.error('Error updating task:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: error.message });
   }
 });
 
