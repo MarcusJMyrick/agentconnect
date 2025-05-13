@@ -1,62 +1,109 @@
-import React from 'react';
+import React, { useState } from 'react';
 
-function TaskCard({ task }) {
+function TaskCard({ task, onEdit, onDelete }) {
+  const [showFullDescription, setShowFullDescription] = useState(false);
+
   const getStatusColor = (status) => {
-    switch (status.toLowerCase()) {
+    switch (status) {
       case 'completed':
         return 'bg-green-100 text-green-800';
-      case 'in progress':
+      case 'in_progress':
         return 'bg-yellow-100 text-yellow-800';
-      case 'pending':
-        return 'bg-gray-100 text-gray-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
   };
 
+  const getPriorityColor = (priority) => {
+    switch (priority) {
+      case 'High':
+        return 'bg-red-100 text-red-800';
+      case 'Medium':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'Low':
+        return 'bg-green-100 text-green-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getPriorityIcon = (priority) => {
+    switch (priority) {
+      case 'High':
+        return '⚠️';
+      case 'Medium':
+        return '⚡';
+      case 'Low':
+        return '📌';
+      default:
+        return '';
+    }
+  };
+
+  const toggleDescription = () => {
+    setShowFullDescription(!showFullDescription);
+  };
+
+  const descriptionPreview = task.description
+    ? task.description.length > 100 && !showFullDescription
+      ? `${task.description.substring(0, 100)}...`
+      : task.description
+    : 'No description provided';
+
   return (
     <div className="bg-white overflow-hidden shadow rounded-lg">
       <div className="px-4 py-5 sm:p-6">
-        <div className="flex items-center justify-between">
-          <div className="flex-1 min-w-0">
-            <h3 className="text-lg font-medium text-gray-900 truncate">
-              {task.title}
-            </h3>
-            <p className="mt-1 text-sm text-gray-500">
-              {task.description}
+        <div className="flex justify-between items-start">
+          <h3 className="text-lg font-medium text-gray-900">{task.title}</h3>
+          <div className="flex space-x-2">
+            <button
+              onClick={onEdit}
+              className="text-indigo-600 hover:text-indigo-900"
+            >
+              Edit
+            </button>
+            <button
+              onClick={onDelete}
+              className="text-red-600 hover:text-red-900"
+            >
+              Delete
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-2 flex space-x-2">
+          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(task.status)}`}>
+            {task.status.replace('_', ' ')}
+          </span>
+          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getPriorityColor(task.priority)}`}>
+            {getPriorityIcon(task.priority)} {task.priority}
+          </span>
+        </div>
+
+        {task.description && (
+          <div className="mt-4">
+            <p className="text-sm text-gray-600">
+              {descriptionPreview}
+              {task.description.length > 100 && (
+                <button
+                  onClick={toggleDescription}
+                  className="ml-1 text-indigo-600 hover:text-indigo-900"
+                >
+                  {showFullDescription ? 'Show less' : 'Show more'}
+                </button>
+              )}
             </p>
           </div>
-          <div className="ml-4 flex-shrink-0">
-            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(task.status)}`}>
-              {task.status}
-            </span>
-          </div>
-        </div>
-        <div className="mt-4">
-          <div className="flex items-center text-sm text-gray-500">
-            <svg className="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-            Due: {new Date(task.due_date).toLocaleDateString()}
-          </div>
-          <div className="mt-2 flex items-center text-sm text-gray-500">
-            <svg className="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
-            Assigned to: {task.assigned_to}
-          </div>
-        </div>
-        {task.priority && (
-          <div className="mt-4">
-            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-              task.priority === 'High' ? 'bg-red-100 text-red-800' :
-              task.priority === 'Medium' ? 'bg-yellow-100 text-yellow-800' :
-              'bg-green-100 text-green-800'
-            }`}>
-              Priority: {task.priority}
-            </span>
-          </div>
         )}
+
+        <div className="mt-4">
+          <p className="text-sm text-gray-500">
+            Due: {new Date(task.due_date).toLocaleDateString()}
+          </p>
+          <p className="text-sm text-gray-500">
+            Assigned to: {task.assigned_to_name || 'Unassigned'}
+          </p>
+        </div>
       </div>
     </div>
   );

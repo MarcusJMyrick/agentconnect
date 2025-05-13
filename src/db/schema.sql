@@ -27,11 +27,13 @@ CREATE TABLE team_members (
 );
 
 -- Create tasks table
-CREATE TABLE tasks (
+CREATE TABLE IF NOT EXISTS tasks (
   id SERIAL PRIMARY KEY,
-  title VARCHAR(100) NOT NULL,
-  status VARCHAR(20) NOT NULL DEFAULT 'pending',
-  assigned_to INTEGER REFERENCES team_members(id) ON DELETE SET NULL,
+  title VARCHAR(255) NOT NULL,
+  description TEXT,
+  status VARCHAR(20) DEFAULT 'pending',
+  priority VARCHAR(10) DEFAULT 'Medium' CHECK (priority IN ('High', 'Medium', 'Low')),
+  assigned_to INTEGER REFERENCES team_members(id),
   due_date DATE NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
