@@ -1,13 +1,18 @@
+require('dotenv').config({ path: '.env.test' });
+
 module.exports = {
   database: {
-    host: process.env.PG_HOST || 'localhost',
-    user: process.env.PG_USER || 'dpi-pttl-6',
-    password: process.env.PG_PASSWORD || '',
-    database: 'agentconnect_test',
-    port: process.env.PG_PORT || 5432
+    host: process.env.PG_HOST,
+    user: process.env.PG_USER,
+    password: process.env.PG_PASSWORD,
+    database: process.env.PG_DATABASE,
+    port: Number(process.env.PG_PORT)
   },
   server: {
-    port: process.env.PORT || 3002
+    port: Number(process.env.PORT)
   },
-  env: 'test'
+  jwt: {
+    secret: process.env.JWT_SECRET
+  },
+  env: process.env.NODE_ENV
 }; 

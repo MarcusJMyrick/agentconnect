@@ -1,74 +1,78 @@
-const { Pool } = require('pg');
-const fs = require('fs');
+const pool = require('../db/pool');
+const fs = require('fs').promises;
 const path = require('path');
-const config = require('../config/test');
+const bcrypt = require('bcrypt');
 
-const pool = new Pool({
-  host: config.database.host,
-  user: config.database.user,
-  password: config.database.password,
-  database: config.database.database,
-  port: config.database.port
-});
+// Generate a unique test run ID
+const TEST_RUN_ID = Date.now().toString(36) + Math.random().toString(36).substr(2);
 
 async function setupTestDatabase() {
-  try {
-    // Read and execute schema.sql
-    const schemaPath = path.join(__dirname, '../db/schema.sql');
-    const schema = fs.readFileSync(schemaPath, 'utf8');
-    await pool.query(schema);
+  // Wipe everything and restart all IDs
+  await pool.query(`
+    TRUNCATE tasks, team_members, agents, users
+    RESTART IDENTITY CASCADE;
+  `);
 
-    // Clear existing data
-    await pool.query('DELETE FROM tasks');
-    await pool.query('DELETE FROM team_members');
-    await pool.query('DELETE FROM agents');
+  // Create test users with unique emails using TEST_RUN_ID
+  const password_hash = await bcrypt.hash('testpassword', 10);
+  const usersResult = await pool.query(`
+    INSERT INTO users (username, email, password_hash, role)
+    VALUES 
+      ('Test User',       'test.${TEST_RUN_ID}@example.com', $1, 'member'),
+      ('Test Agent',      'agent.${TEST_RUN_ID}@example.com',$1, 'agent'),
+      ('Test HR',         'hr.${TEST_RUN_ID}@example.com',   $1, 'hr')
+    RETURNING id, username, email, role
+  `, [password_hash]);
 
-    // Insert test data
-    await pool.query(`
-      INSERT INTO agents (name, role, office, region, skills, active_status)
-      VALUES 
-        ('John Smith', 'Senior Agent', 'New York', 'Northeast', ARRAY['sales', 'negotiation'], true),
-        ('Sarah Johnson', 'Team Lead', 'Los Angeles', 'West', ARRAY['management', 'training'], true)
-      RETURNING id
-    `);
+  const users = {
+    test: usersResult.rows[0],
+    agent: usersResult.rows[1],
+    hr: usersResult.rows[2]
+  };
 
-    const agents = await pool.query('SELECT id FROM agents');
-    const agentId = agents.rows[0].id;
+  // Insert agents
+  const agentsRes = await pool.query(`
+    INSERT INTO agents (name, role, office, region, skills, active_status)
+    VALUES 
+      ('John Smith', 'Senior Agent', 'New York',    'Northeast', ARRAY['sales','negotiation'], true),
+      ('Sarah Johnson','Team Lead', 'Los Angeles', 'West',      ARRAY['management','training'], true)
+    RETURNING id
+  `);
+  const agentId = agentsRes.rows[0].id;
 
-    await pool.query(`
-      INSERT INTO team_members (name, role, agent_id)
-      VALUES 
-        ('Mike Brown', 'Sales Associate', $1),
-        ('Lisa Chen', 'Customer Service', $1)
-    `, [agentId]);
+  // Insert team members using the real agent ID
+  const teamRes = await pool.query(`
+    INSERT INTO team_members (name, role, agent_id)
+    VALUES 
+      ('Mike Brown', 'Sales Associate', $1),
+      ('Lisa Chen',  'Customer Service',$1)
+    RETURNING id
+  `, [agentId]);
+  const teamMemberId = teamRes.rows[0].id;
 
-    const teamMembers = await pool.query('SELECT id FROM team_members');
-    const teamMemberId = teamMembers.rows[0].id;
+  // Insert tasks using the real team member ID
+  await pool.query(`
+    INSERT INTO tasks (title, description, status, priority, assigned_to, due_date)
+    VALUES 
+      ('Test Task 1','...', 'pending',     'High',   $1, CURRENT_DATE + INTERVAL '3 days'),
+      ('Test Task 2','...', 'in_progress','Medium', $1, CURRENT_DATE + INTERVAL '7 days')
+  `, [teamMemberId]);
 
-    await pool.query(`
-      INSERT INTO tasks (title, description, status, priority, assigned_to, due_date)
-      VALUES 
-        ('Test Task 1', 'Description for task 1', 'pending', 'High', $1, '2024-04-15'),
-        ('Test Task 2', 'Description for task 2', 'in_progress', 'Medium', $1, '2024-04-20')
-    `, [teamMemberId]);
-
-  } catch (error) {
-    console.error('Error setting up test database:', error);
-    throw error;
-  }
+  // Return IDs and test data for use in tests
+  return {
+    agentId,
+    teamMemberId,
+    users
+  };
 }
 
 async function teardownTestDatabase() {
-  try {
-    await pool.end();
-  } catch (error) {
-    console.error('Error tearing down test database:', error);
-    throw error;
-  }
+  await pool.query('TRUNCATE tasks, team_members, agents, users RESTART IDENTITY CASCADE;');
 }
 
 module.exports = {
   pool,
   setupTestDatabase,
-  teardownTestDatabase
-}; 
+  teardownTestDatabase,
+  TEST_RUN_ID
+};

@@ -10,6 +10,7 @@ const port = process.env.PORT || 3001;
 const agentsRouter = require('./routes/agents');
 const teamMembersRouter = require('./routes/team-members');
 const tasksRouter = require('./routes/tasks');
+const authRouter = require('./routes/auth');
 
 // Middleware
 app.use(cors());
@@ -25,6 +26,9 @@ const pool = new Pool({
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
+// Make pool available globally
+global.pool = pool;
+
 // Test database connection
 pool.connect((err, client, release) => {
   if (err) {
@@ -35,6 +39,7 @@ pool.connect((err, client, release) => {
 });
 
 // Routes
+app.use('/api/auth', authRouter);
 app.use('/api/agents', agentsRouter);
 app.use('/api/team-members', teamMembersRouter);
 app.use('/api/tasks', tasksRouter);
@@ -50,7 +55,5 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Something broke!' });
 });
 
-// Start server
-app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
-}); 
+// Export app for testing
+module.exports = app; 

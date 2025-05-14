@@ -6,25 +6,19 @@ const pool = require('../db/pool');
 router.get('/', async (req, res) => {
   try {
     const { assignedTo } = req.query;
-    let result;
-
-    if (assignedTo) {
-      result = await pool.query(
-        `SELECT tasks.*, team_members.name AS assigned_to_name
-         FROM tasks
-         LEFT JOIN team_members ON tasks.assigned_to = team_members.id
-         WHERE assigned_to = $1
-         ORDER BY due_date`,
-        [assignedTo]
-      );
-    } else {
-      result = await pool.query(
-        `SELECT tasks.*, team_members.name AS assigned_to_name
-         FROM tasks
-         LEFT JOIN team_members ON tasks.assigned_to = team_members.id
-         ORDER BY due_date`
-      );
+    
+    if (!assignedTo) {
+      return res.status(400).json({ error: 'assignedTo parameter is required' });
     }
+
+    const result = await pool.query(
+      `SELECT tasks.*, team_members.name AS assigned_to_name
+       FROM tasks
+       LEFT JOIN team_members ON tasks.assigned_to = team_members.id
+       WHERE assigned_to = $1
+       ORDER BY due_date`,
+      [assignedTo]
+    );
 
     return res.json(result.rows);
   } catch (err) {

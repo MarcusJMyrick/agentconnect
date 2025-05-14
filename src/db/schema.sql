@@ -2,6 +2,7 @@
 DROP TABLE IF EXISTS tasks;
 DROP TABLE IF EXISTS team_members;
 DROP TABLE IF EXISTS agents;
+DROP TABLE IF EXISTS users;
 
 -- Create agents table
 CREATE TABLE agents (
@@ -38,6 +39,43 @@ CREATE TABLE IF NOT EXISTS tasks (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Create users table for authentication
+CREATE TABLE users (
+  id SERIAL PRIMARY KEY,
+  username VARCHAR(100) NOT NULL,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  password_hash TEXT NOT NULL,
+  role VARCHAR(20) NOT NULL CHECK (role IN ('hr', 'agent', 'member')),
+  profile_id INTEGER,
+  profile_type VARCHAR(20) CHECK (profile_type IN ('agent', 'member')),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create seed data for users
+INSERT INTO users (username, email, password_hash, role) VALUES
+  ('HR Admin', 'hr@agentconnect.com', '$2b$10$jZkxnqeV.E/rMDdeHqZwoeSWWhF5HVRS.O7UEuw26U9DEOj9ivjVW', 'hr'),
+  ('John Smith', 'john.smith@agentconnect.com', '$2b$10$jZkxnqeV.E/rMDdeHqZwoeSWWhF5HVRS.O7UEuw26U9DEOj9ivjVW', 'agent'),
+  ('Sarah Johnson', 'sarah.johnson@agentconnect.com', '$2b$10$jZkxnqeV.E/rMDdeHqZwoeSWWhF5HVRS.O7UEuw26U9DEOj9ivjVW', 'agent'),
+  ('Michael Chen', 'michael.chen@agentconnect.com', '$2b$10$jZkxnqeV.E/rMDdeHqZwoeSWWhF5HVRS.O7UEuw26U9DEOj9ivjVW', 'agent'),
+  ('Emily Rodriguez', 'emily.rodriguez@agentconnect.com', '$2b$10$jZkxnqeV.E/rMDdeHqZwoeSWWhF5HVRS.O7UEuw26U9DEOj9ivjVW', 'agent'),
+  ('David Kim', 'david.kim@agentconnect.com', '$2b$10$jZkxnqeV.E/rMDdeHqZwoeSWWhF5HVRS.O7UEuw26U9DEOj9ivjVW', 'agent'),
+  ('Jennifer Park', 'jennifer.park@agentconnect.com', '$2b$10$jZkxnqeV.E/rMDdeHqZwoeSWWhF5HVRS.O7UEuw26U9DEOj9ivjVW', 'member'),
+  ('Kevin Wong', 'kevin.wong@agentconnect.com', '$2b$10$jZkxnqeV.E/rMDdeHqZwoeSWWhF5HVRS.O7UEuw26U9DEOj9ivjVW', 'member'),
+  ('Rachel Kim', 'rachel.kim@agentconnect.com', '$2b$10$jZkxnqeV.E/rMDdeHqZwoeSWWhF5HVRS.O7UEuw26U9DEOj9ivjVW', 'member');
+
+-- Update profile_id and profile_type for agents
+UPDATE users SET profile_id = 1, profile_type = 'agent' WHERE email = 'john.smith@agentconnect.com';
+UPDATE users SET profile_id = 2, profile_type = 'agent' WHERE email = 'sarah.johnson@agentconnect.com';
+UPDATE users SET profile_id = 3, profile_type = 'agent' WHERE email = 'michael.chen@agentconnect.com';
+UPDATE users SET profile_id = 4, profile_type = 'agent' WHERE email = 'emily.rodriguez@agentconnect.com';
+UPDATE users SET profile_id = 5, profile_type = 'agent' WHERE email = 'david.kim@agentconnect.com';
+
+-- Update profile_id and profile_type for team members
+UPDATE users SET profile_id = 1, profile_type = 'member' WHERE email = 'jennifer.park@agentconnect.com';
+UPDATE users SET profile_id = 2, profile_type = 'member' WHERE email = 'kevin.wong@agentconnect.com';
+UPDATE users SET profile_id = 3, profile_type = 'member' WHERE email = 'rachel.kim@agentconnect.com';
 
 -- Create indexes for better query performance
 CREATE INDEX idx_agents_region ON agents(region);

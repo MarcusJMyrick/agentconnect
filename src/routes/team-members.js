@@ -6,16 +6,15 @@ const pool = require('../db/pool');
 router.get('/', async (req, res) => {
   try {
     const { agentId } = req.query;
-    let result;
-
-    if (agentId) {
-      result = await pool.query(
-        'SELECT * FROM team_members WHERE agent_id = $1 ORDER BY name',
-        [agentId]
-      );
-    } else {
-      result = await pool.query('SELECT * FROM team_members ORDER BY name');
+    
+    if (!agentId) {
+      return res.status(400).json({ error: 'agentId parameter is required' });
     }
+
+    const result = await pool.query(
+      'SELECT * FROM team_members WHERE agent_id = $1 ORDER BY name',
+      [agentId]
+    );
 
     return res.json(result.rows);
   } catch (err) {

@@ -1,50 +1,31 @@
 import React from 'react';
 
-function AgentCard({ agent }) {
+const AgentCard = ({ agent, teamMembers = [], taskCounts = {} }) => {
+  const agentTeamMembers = teamMembers?.filter(member => member.agent_id === agent.id) || [];
+
   return (
-    <div className="bg-white overflow-hidden shadow rounded-lg">
-      <div className="px-4 py-5 sm:p-6">
-        <div className="flex items-center">
-          <div className="flex-shrink-0 bg-indigo-500 rounded-md p-3">
-            <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
+    <div className="bg-gray-50 rounded-lg shadow-sm p-6 mb-6">
+      <div className="mb-4">
+        <h2 className="text-xl font-bold text-gray-900">{agent.name}</h2>
+        <div className="mt-2 grid grid-cols-3 gap-4 text-sm text-gray-600">
+          <div>
+            <span className="font-medium">Role:</span> {agent.role}
           </div>
-          <div className="ml-5 w-0 flex-1">
-            <dl>
-              <dt className="text-sm font-medium text-gray-500 truncate">
-                {agent.role}
-              </dt>
-              <dd>
-                <div className="text-lg font-medium text-gray-900">
-                  {agent.name}
-                </div>
-              </dd>
-            </dl>
+          <div>
+            <span className="font-medium">Office:</span> {agent.office}
           </div>
-        </div>
-        <div className="mt-4">
-          <div className="flex items-center text-sm text-gray-500">
-            <svg className="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-            {agent.office}
-          </div>
-          <div className="mt-2 flex items-center text-sm text-gray-500">
-            <svg className="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            {agent.region}
+          <div>
+            <span className="font-medium">Region:</span> {agent.region}
           </div>
         </div>
         {agent.skills && agent.skills.length > 0 && (
-          <div className="mt-4">
-            <div className="flex flex-wrap gap-2">
+          <div className="mt-2">
+            <span className="text-sm font-medium text-gray-600">Skills: </span>
+            <div className="inline-flex flex-wrap gap-2 mt-1">
               {agent.skills.map((skill, index) => (
                 <span
                   key={index}
-                  className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800"
+                  className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
                 >
                   {skill}
                 </span>
@@ -53,8 +34,26 @@ function AgentCard({ agent }) {
           </div>
         )}
       </div>
+
+      <div className="mt-4">
+        <h3 className="text-sm font-medium text-gray-600 mb-2">Team Members:</h3>
+        <div className="flex flex-wrap gap-2">
+          {agentTeamMembers.length > 0 ? (
+            agentTeamMembers.map(member => (
+              <span
+                key={member.id}
+                className="text-xs text-gray-600"
+              >
+                {member.name}
+              </span>
+            ))
+          ) : (
+            <span className="text-xs text-gray-500 italic">No team members assigned</span>
+          )}
+        </div>
+      </div>
     </div>
   );
-}
+};
 
 export default AgentCard; 

@@ -251,9 +251,37 @@ function Dashboard() {
       <div className="mb-8">
         <h2 className="text-xl font-semibold text-gray-900 mb-4">Active Agents</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {agents.map((agent) => (
-            <AgentCard key={agent.id} agent={agent} />
-          ))}
+          {agents.map((agent) => {
+            const agentTeamMembers = teamMembers.filter(member => member.agent_id === agent.id);
+            return (
+              <div key={agent.id} className="bg-white rounded-lg shadow-sm p-4">
+                <h3 className="font-medium text-gray-900">{agent.name}</h3>
+                <p className="text-sm text-gray-600">Role: {agent.role}</p>
+                <p className="text-sm text-gray-600">Office: {agent.office}</p>
+                <p className="text-sm text-gray-600">Region: {agent.region}</p>
+                <div className="mt-2">
+                  <p className="text-sm text-gray-600">Skills:</p>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {agent.skills?.map((skill, index) => (
+                      <span key={index} className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <div className="mt-2">
+                  <p className="text-sm text-gray-600">Team Members:</p>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {agentTeamMembers.map(member => (
+                      <span key={member.id} className="text-xs text-gray-600">
+                        {member.name}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 
