@@ -175,28 +175,24 @@ router.delete('/:id', authenticateToken, authorizeRole(['hr']), async (req, res)
   try {
     const { id } = req.params;
 
-    // Check if agent has any associated team members
-    const teamMembersResult = await pool.query(
-      'SELECT COUNT(*) FROM team_members WHERE agent_id = $1',
-      [id]
-    );
-
-    if (parseInt(teamMembersResult.rows[0].count) > 0) {
-      return res.status(400).json({
-        error: 'Cannot delete agent with associated team members'
-      });
-    }
-
-    // Check if agent has any associated tasks
+    // First, block deletion if the agent has any tasks
     const tasksResult = await pool.query(
       'SELECT COUNT(*) FROM tasks WHERE assigned_to IN (SELECT id FROM team_members WHERE agent_id = $1)',
       [id]
     );
 
-    if (parseInt(tasksResult.rows[0].count) > 0) {
-      return res.status(400).json({
-        error: 'Cannot delete agent with associated tasks'
-      });
+    if (parseInt(tasksResult.rows[0].count, 10) > 0) {
+      return res.status(400).json({ error: 'Cannot delete agent with associated tasks' });
+    }
+
+    // Next, block deletion if the agent has any team members
+    const teamMembersResult = await pool.query(
+      'SELECT COUNT(*) FROM team_members WHERE agent_id = $1',
+      [id]
+    );
+
+    if (parseInt(teamMembersResult.rows[0].count, 10) > 0) {
+      return res.status(400).json({ error: 'Cannot delete agent with associated team members' });
     }
 
     const result = await pool.query('DELETE FROM agents WHERE id = $1 RETURNING *', [id]);

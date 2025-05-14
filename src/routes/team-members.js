@@ -81,6 +81,9 @@ router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
     
+    // First delete any associated tasks
+    await pool.query('DELETE FROM tasks WHERE assigned_to = $1', [id]);
+    
     const result = await pool.query(
       'DELETE FROM team_members WHERE id = $1 RETURNING *',
       [id]

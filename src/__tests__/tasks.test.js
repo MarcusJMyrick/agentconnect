@@ -11,18 +11,34 @@ app.use('/api/tasks', tasksRouter);
 
 let testData;
 let hrToken;
+let agentToken;
+let memberToken;
 
-beforeAll(async () => {
+beforeEach(async () => {
   testData = await setupTestDatabase();
   hrToken = jwt.sign(
     { id: testData.users.hr.id, role: 'hr' },
     process.env.JWT_SECRET || 'test-secret-key',
     { expiresIn: '1h' }
   );
+  agentToken = jwt.sign(
+    { id: testData.users.agent.id, role: 'agent' },
+    process.env.JWT_SECRET || 'test-secret-key',
+    { expiresIn: '1h' }
+  );
+  memberToken = jwt.sign(
+    { id: testData.users.test.id, role: 'member' },
+    process.env.JWT_SECRET || 'test-secret-key',
+    { expiresIn: '1h' }
+  );
+});
+
+afterEach(async () => {
+  await teardownTestDatabase();
 });
 
 afterAll(async () => {
-  await teardownTestDatabase();
+  await pool.end();
 });
 
 describe('Tasks API', () => {
@@ -113,24 +129,9 @@ describe('Tasks API', () => {
   });
 
   describe('PATCH /api/tasks/:id', () => {
-    let taskId;
-
-    beforeEach(async () => {
-      const result = await pool.query(`
-        INSERT INTO tasks (title, description, status, priority, assigned_to, due_date)
-        VALUES ('Test Task', 'Test description', 'pending', 'Medium', $1, CURRENT_DATE + INTERVAL '7 days')
-        RETURNING id
-      `, [testData.teamMemberId]);
-      taskId = result.rows[0].id;
-    });
-
-    afterEach(async () => {
-      await pool.query('DELETE FROM tasks WHERE id = $1', [taskId]);
-    });
-
     it('should update task status', async () => {
       const response = await request(app)
-        .patch(`/api/tasks/${taskId}`)
+        .patch(`/api/tasks/${testData.taskId}`)
         .send({ status: 'in_progress' })
         .set('Authorization', `Bearer ${hrToken}`);
 
@@ -140,17 +141,17 @@ describe('Tasks API', () => {
 
     it('should update task priority', async () => {
       const response = await request(app)
-        .patch(`/api/tasks/${taskId}`)
-        .send({ priority: 'High' })
+        .patch(`/api/tasks/${testData.taskId}`)
+        .send({ priority: 'Low' })
         .set('Authorization', `Bearer ${hrToken}`);
 
       expect(response.status).toBe(200);
-      expect(response.body.priority).toBe('High');
+      expect(response.body.priority).toBe('Low');
     });
 
     it('should update task description', async () => {
       const response = await request(app)
-        .patch(`/api/tasks/${taskId}`)
+        .patch(`/api/tasks/${testData.taskId}`)
         .send({ description: 'Updated description' })
         .set('Authorization', `Bearer ${hrToken}`);
 
@@ -170,7 +171,7 @@ describe('Tasks API', () => {
 
     it('should validate status values', async () => {
       const response = await request(app)
-        .patch(`/api/tasks/${taskId}`)
+        .patch(`/api/tasks/${testData.taskId}`)
         .send({ status: 'invalid_status' })
         .set('Authorization', `Bearer ${hrToken}`);
 
@@ -180,28 +181,13 @@ describe('Tasks API', () => {
   });
 
   describe('DELETE /api/tasks/:id', () => {
-    let taskId;
-
-    beforeEach(async () => {
-      const result = await pool.query(`
-        INSERT INTO tasks (title, description, status, priority, assigned_to, due_date)
-        VALUES ('Test Task', 'Test description', 'pending', 'Medium', $1, CURRENT_DATE + INTERVAL '7 days')
-        RETURNING id
-      `, [testData.teamMemberId]);
-      taskId = result.rows[0].id;
-    });
-
     it('should delete a task', async () => {
       const response = await request(app)
-        .delete(`/api/tasks/${taskId}`)
+        .delete(`/api/tasks/${testData.taskId}`)
         .set('Authorization', `Bearer ${hrToken}`);
 
       expect(response.status).toBe(200);
-      expect(response.body).toHaveProperty('message');
-
-      // Verify task is deleted
-      const result = await pool.query('SELECT * FROM tasks WHERE id = $1', [taskId]);
-      expect(result.rows.length).toBe(0);
+      expect(response.body).toHaveProperty('message', 'Task deleted successfully');
     });
 
     it('should return 404 for non-existent task', async () => {

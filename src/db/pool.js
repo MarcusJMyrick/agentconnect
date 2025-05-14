@@ -11,6 +11,4 @@ const pool = new Pool({
   port:     process.env.PG_PORT || 5432
 });
 
-console.log('Connected to:', isTest ? 'TEST DB' : 'DEV DB');
-
 module.exports = pool; 

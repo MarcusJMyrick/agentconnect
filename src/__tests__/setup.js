@@ -36,9 +36,9 @@ async function setupTestDatabase() {
     VALUES 
       ('John Smith', 'Senior Agent', 'New York',    'Northeast', ARRAY['sales','negotiation'], true),
       ('Sarah Johnson','Team Lead', 'Los Angeles', 'West',      ARRAY['management','training'], true)
-    RETURNING id
+    RETURNING id, name, role, office, region, skills, active_status
   `);
-  const agentId = agentsRes.rows[0].id;
+  const agents = agentsRes.rows;
 
   // Insert team members using the real agent ID
   const teamRes = await pool.query(`
@@ -46,23 +46,29 @@ async function setupTestDatabase() {
     VALUES 
       ('Mike Brown', 'Sales Associate', $1),
       ('Lisa Chen',  'Customer Service',$1)
-    RETURNING id
-  `, [agentId]);
-  const teamMemberId = teamRes.rows[0].id;
+    RETURNING id, name, role, agent_id
+  `, [agents[0].id]);
+  const teamMembers = teamRes.rows;
 
   // Insert tasks using the real team member ID
-  await pool.query(`
+  const tasksRes = await pool.query(`
     INSERT INTO tasks (title, description, status, priority, assigned_to, due_date)
     VALUES 
       ('Test Task 1','...', 'pending',     'High',   $1, CURRENT_DATE + INTERVAL '3 days'),
       ('Test Task 2','...', 'in_progress','Medium', $1, CURRENT_DATE + INTERVAL '7 days')
-  `, [teamMemberId]);
+    RETURNING id, title, description, status, priority, assigned_to, due_date
+  `, [teamMembers[0].id]);
+  const tasks = tasksRes.rows;
 
-  // Return IDs and test data for use in tests
+  // Return all test data for use in tests
   return {
-    agentId,
-    teamMemberId,
-    users
+    users,
+    agents,
+    teamMembers,
+    tasks,
+    agentId: agents[0].id,
+    teamMemberId: teamMembers[0].id,
+    taskId: tasks[0].id
   };
 }
 
