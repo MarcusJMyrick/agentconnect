@@ -15,8 +15,8 @@ let hrToken;
 beforeAll(async () => {
   testData = await setupTestDatabase();
   hrToken = jwt.sign(
-    { userId: testData.users.hr.id, role: 'hr' },
-    process.env.JWT_SECRET,
+    { id: testData.users.hr.id, role: 'hr' },
+    process.env.JWT_SECRET || 'test-secret-key',
     { expiresIn: '1h' }
   );
 });

@@ -1,6 +1,32 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../db/pool');
+const { authenticateToken, authorizeRole } = require('../middleware/auth');
+
+// Validation middleware for task creation/updates
+function validateTask(req, res, next) {
+  const { title, assignedTo, status, priority } = req.body;
+
+  // Required fields check
+  if (!title || !assignedTo) {
+    return res.status(400).json({
+      error: 'Missing required fields',
+      required: ['title', 'assignedTo']
+    });
+  }
+
+  // Status values
+  if (status && !['pending', 'in_progress', 'completed'].includes(status)) {
+    return res.status(400).json({ error: 'Invalid status value' });
+  }
+
+  // Priority values
+  if (priority && !['Low', 'Medium', 'High'].includes(priority)) {
+    return res.status(400).json({ error: 'Invalid priority value' });
+  }
+
+  next();
+}
 
 // Get all tasks
 router.get('/', async (req, res) => {
@@ -53,33 +79,44 @@ router.get('/assigned', async (req, res) => {
 });
 
 // Create new task
-router.post('/', async (req, res) => {
-  try {
-    const { title, status, assigned_to, due_date, priority, description } = req.body;
-    
-    if (!title || !assigned_to || !due_date) {
-      return res.status(400).json({ error: 'Title, assigned_to, and due_date are required' });
-    }
+router.post(
+  '/',
+  validateTask,              // Run validation first
+  authenticateToken,
+  authorizeRole(['hr']),
+  async (req, res) => {
+    const { title, description, status, priority, assignedTo, dueDate } = req.body;
 
-    // Validate priority if provided
-    if (priority && !['High', 'Medium', 'Low'].includes(priority)) {
-      return res.status(400).json({ error: 'Priority must be High, Medium, or Low' });
+    try {
+      const result = await pool.query(
+        `INSERT INTO tasks
+           (title, description, status, priority, assigned_to, due_date)
+         VALUES 
+           ($1, $2, $3, $4, $5, $6)
+         RETURNING
+           id,
+           title,
+           description,
+           status,
+           priority,
+           assigned_to   AS "assignedTo",
+           due_date      AS "dueDate"`,
+        [
+          title,
+          description || '',
+          status || 'pending',
+          priority || 'Medium',
+          assignedTo,
+          dueDate || null
+        ]
+      );
+      return res.status(201).json(result.rows[0]);
+    } catch (error) {
+      console.error('Error creating task:', error);
+      return res.status(500).json({ error: error.message });
     }
-    
-    const result = await pool.query(
-      `INSERT INTO tasks (title, status, assigned_to, due_date, priority, description)
-       VALUES ($1, $2, $3, $4, $5, $6)
-       RETURNING *,
-         (SELECT name FROM team_members WHERE id = $3) AS assigned_to_name`,
-      [title, status || 'pending', assigned_to, due_date, priority || 'Medium', description]
-    );
-    
-    res.status(201).json(result.rows[0]);
-  } catch (error) {
-    console.error('Error creating task:', error);
-    res.status(500).json({ error: error.message });
   }
-});
+);
 
 // Update task
 router.patch('/:id', async (req, res) => {
